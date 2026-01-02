@@ -8,33 +8,16 @@ The pipeline scrapes data from the batdongsan.com website, processes it by using
 
 
 ## Project Structure
-```text
-REAL_ESTATE
-├── dags/                # Airflow DAG definitions
-│   └── dag.py           # Main ETL workflow script
-├── data/                # Local data storage (raw and cleaned)
-├── dbt_real_estate/     # dbt transformation project
-├── load_to_sql/         # Scripts to migrate data to Postgres
-├── logs/                # System and application logs
-├── real_estate/         # Core project logic
-├── scrapy/              # Scrapy crawler engine
-├── transform/           # Custom transformation scripts
-├── .gitignore           # Git ignore configurations
-├── docker-compose-airflow.yml # Airflow service orchestration
-├── docker-compose.yml   # Core infrastructure setup
-├── Dockerfile           # Container definition
-├── README.md            # Project documentation
-└── requirements.txt     # Python dependencies
+<img width="682" height="389" alt="{DE7E8092-9DC3-497B-80AD-5E75B379F22E}" src="https://github.com/user-attachments/assets/5d77b33d-e9ea-4605-a124-144d23b67eff" />
 
 
+## Technologies Used
 
-Technologies Used
-Orchestration: Apache Airflow
-Crawling: Scrapy (Python)
-Transformation: dbt (Data Build Tool)
-Database: PostgreSQL
-Infrastructure: Docker & Docker Compose
+- Orchestration: Apache Airflow
+- Crawling: Scrapy (Python)
+- Transformation: dbt (Data Build Tool)
+- Database: PostgreSQL
+- Infrastructure: Docker & Docker Compose
 
-Data Model
-
+## Data Model 
 
