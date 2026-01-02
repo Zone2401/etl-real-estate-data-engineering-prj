@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  
+  postgres:
+    image: postgres:13
+    container_name: airflow_postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    networks:
+      - airflow_network
+
+  
+  redis:
+    image: redis:6-alpine
+    container_name: airflow_redis
+    networks:
+      - airflow_network
+
+  airflow-webserver:
+    build: .
+    container_name: airflow_webserver
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment: &airflow-common-env
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      PYTHONPATH: /opt/airflow:/opt/airflow/dags
+    ports:
+      - "8080:8080"
+    volumes: &airflow-common-volumes
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./requirements.txt:/requirements.txt
+      - ./real_estate:/opt/airflow/real_estate
+      - ./load_to_sql:/opt/airflow/load_to_sql
+      - ./dbt_real_estate:/opt/airflow/dbt_real_estate
+      - ./transform:/opt/airflow/transform
+      - ./data:/opt/airflow/data
+      - ./:/opt/airflow
+    networks:
+      - airflow_network
+    entrypoint: 
+      - "bash"
+      - "-c"
+      - |
+        pip install -r /requirements.txt
+        airflow db upgrade
+        airflow users create --username admin --password admin --firstname Air --lastname Flow --role Admin --email nguyendinhduc2401@gmail.com
+        airflow webserver
+
+  airflow-scheduler:
+    build: .
+    container_name: airflow_scheduler
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment: *airflow-common-env
+    volumes: *airflow-common-volumes
+    networks:
+      - airflow_network
+    entrypoint: 
+      - "bash"
+      - "-c"
+      - |
+        pip install -r /requirements.txt  
+        airflow scheduler
+
+  airflow-worker:
+    build: .
+    container_name: airflow_worker
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+    environment: *airflow-common-env
+    volumes: *airflow-common-volumes
+    networks:
+      - airflow_network
+    entrypoint: 
+      - "bash"
+      - "-c"
+      - |
+        pip install -r /requirements.txt
+        airflow celery worker
+
+networks:
+  airflow_network:
+    external: True
