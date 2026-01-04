@@ -1,9 +1,10 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.bash import BashOperator
 from datetime import datetime, timedelta
 from pathlib import Path  
+import pandas as pd
 
 # Cosmos dbt imports
 from cosmos import DbtTaskGroup, ProjectConfig, ProfileConfig, RenderConfig
@@ -16,6 +17,7 @@ from load_to_sql.load_raw_data import load_data_to_postgres
 
 # Cấu hình đường dẫn dbt
 DBT_PROJECT_PATH = Path("/opt/airflow/dbt_real_estate")
+CLEAN_DATA_FILE = "/opt/airflow/data/clean_data.csv"
 
 default_args = {
     "owner": "DucNguyen",
@@ -24,6 +26,16 @@ default_args = {
     "retry_delay": timedelta(minutes=1),
     "depends_on_past": False,
 }
+
+def check_data_not_empty():
+    """
+    Hàm kiểm tra dữ liệu: Trả về True nếu có dữ liệu, 
+    trả về False để ngắt (skip) các task phía sau.
+    """
+    if not Path(CLEAN_DATA_FILE).exists():
+        return False
+    df = pd.read_csv(CLEAN_DATA_FILE)
+    return not df.empty
 
 with DAG(
     dag_id="etl_real_estate_dag",
@@ -44,7 +56,12 @@ with DAG(
 
     clean_task = PythonOperator(
         task_id="clean_raw_data",
-        python_callable=run,
+        python_callable=run, 
+    )
+
+    check_data_task = ShortCircuitOperator(
+        task_id="check_if_data_empty",
+        python_callable=check_data_not_empty,
     )
 
     create_table_in_postgres_task = PythonOperator(
@@ -57,13 +74,11 @@ with DAG(
         python_callable=load_data_to_postgres,
     )
 
-    # Task để dbt cài đặt các package (như dbt_utils)
     dbt_deps = BashOperator(
         task_id="dbt_install_deps",
         bash_command=f"cd {DBT_PROJECT_PATH} && dbt deps",
     )
 
-    # ---- dbt models via Cosmos TaskGroup ----
     postgres_dbt = DbtTaskGroup(
         group_id="real_estate_dbt_pipeline",
         project_config=ProjectConfig(DBT_PROJECT_PATH),
@@ -76,17 +91,18 @@ with DAG(
             ),
         ),
         render_config=RenderConfig(
-            test_behavior=TestBehavior.AFTER_EACH, # Chạy test ngay sau từng model
+            test_behavior=TestBehavior.AFTER_EACH,
         ),
     )
 
     end = EmptyOperator(task_id="end")
 
-    # ---- Workflow ----
+    # ---- Workflow Cập Nhật ----
     (
         start 
         >> scrape_task 
         >> clean_task 
+        >> check_data_task  # Kiểm tra ngay sau khi clean
         >> create_table_in_postgres_task 
         >> load_task 
         >> dbt_deps 

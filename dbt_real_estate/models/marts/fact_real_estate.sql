@@ -2,29 +2,28 @@
 
 WITH staging AS (
     SELECT * FROM {{ ref('stg_properties') }}
+    -- Chỉ lấy những dòng có URL (để khớp với dim_post)
+    WHERE url IS NOT NULL AND url != ''
 ),
 
 final AS (
     SELECT
-        {{ dbt_utils.generate_surrogate_key(['staging.title', 'staging.url']) }} AS post_id,
-        {{ dbt_utils.generate_surrogate_key(['staging.district', 'staging.city']) }} AS address_id,
-        COALESCE(
-            CASE 
-                WHEN staging.seller IS NOT NULL AND TRIM(staging.seller) != '' 
-                THEN {{ dbt_utils.generate_surrogate_key(["TRIM(staging.seller)"]) }}
-            END,
-            {{ dbt_utils.generate_surrogate_key(["'Unknown'"]) }}
-        ) AS seller_id,
-        staging.price,
-        staging.area,
-        staging.bedroom,
-        staging.bathroom 
+        -- 1. Khớp với dim_post (Chỉ dùng url)
+        {{ dbt_utils.generate_surrogate_key(['url']) }} AS post_id,
+        
+        -- 2. Khớp với dim_address
+        {{ dbt_utils.generate_surrogate_key(['district', 'city']) }} AS address_id,
+        
+        -- 3. Khớp với dim_seller (Dùng cùng logic COALESCE/NULLIF)
+        {{ dbt_utils.generate_surrogate_key([
+            "TRIM(COALESCE(NULLIF(NULLIF(NULLIF(seller, ''), 'nan'), 'None'), 'Unknown'))"
+        ]) }} AS seller_id,
+        
+        price,
+        area,
+        bedroom,
+        bathroom 
     FROM staging
 )
 
-SELECT f.*
-FROM final f
--- Sử dụng LEFT JOIN để không làm mất dòng dữ liệu ở Fact
-LEFT JOIN {{ ref('dim_post') }} dp ON f.post_id = dp.post_id
-LEFT JOIN {{ ref('dim_address') }} da ON f.address_id = da.address_id
-LEFT JOIN {{ ref('dim_seller') }} ds ON f.seller_id = ds.seller_id
+SELECT * FROM final
