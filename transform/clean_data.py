@@ -11,11 +11,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
         return df
     df = df.copy()
     
-    # --- PHẦN 1: XỬ LÝ NULL / DỮ LIỆU TRỐNG ---
-    # Chuyển các giá trị text rác về NaN để dễ quản lý
+    
     df.replace(["None", "Giá thỏa thuận", "", "NaN", "nan"], np.nan, inplace=True)
     
-    # Điền giá trị mặc định cho các cột chuỗi để tránh lỗi .str sau này
+    
     text_cols = ["price", "area", "address", "bedroom", "bathroom", "news_type", "total_posts"]
     for col in text_cols:
         if col in df.columns:
@@ -39,7 +38,6 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.copy()
 
-    # --- PHẦN 2: XỬ LÝ CHUỖI (STR.REPLACE / EXTRACT) ---
     # Price & Area
     df["price"] = df["price"].astype(str).str.replace(",", ".", regex=False)
     
@@ -62,9 +60,11 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     df["news_type"] = df["news_type"].astype(str).str.replace("Tin", "", regex=False)
     df["total_posts"] = df["total_posts"].astype(str).str.extract(r"(\d+)")
 
-    # --- PHẦN 3: ÉP KIỂU DỮ LIỆU (ASTYPE) ---
     # Sử dụng errors='coerce' để nếu gặp dữ liệu lỗi sẽ chuyển thành NaN thay vì crash
     df["price"] = pd.to_numeric(df["price"], errors='coerce')
+    mask_nghin = df["price_unit"].str.contains("nghìn", na=False)
+    df.loc[mask_nghin, "price"] = df.loc[mask_nghin, "price"] / 1000
+    df.loc[mask_nghin, "price_unit"] = "triệu/tháng"
     df["area"] = pd.to_numeric(df["area"], errors='coerce')
     
     # Dùng kiểu Int64 (viết hoa I) của Pandas để hỗ trợ chứa cả số nguyên và NaN
