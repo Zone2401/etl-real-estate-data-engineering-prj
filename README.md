@@ -4,7 +4,8 @@ This project implements a full ETL pipeline for real estate data using Apache Ai
 The pipeline scrapes data from the batdongsan.com website, processes it by using python and dbt, and loads it into Postgresql
 
 ## Architecture
-<img width="875" height="735" alt="pipeline-1" src="https://github.com/user-attachments/assets/ca29eacf-c7ef-482c-abdf-e3a012236b1e" />
+<img width="914" height="653" alt="{99E56B75-68B7-4EAB-8A0B-094D0422F9FB}" src="https://github.com/user-attachments/assets/df064ba0-94b6-489b-a1bf-a2e8a10ac0fe" />
+
 
 
 ## Project Structure
