@@ -1,0 +1,8 @@
+apache-airflow==2.10.0
+apache-airflow-providers-postgres
+apache-airflow-providers-openlineage>=1.8.0
+astronomer-cosmos
+scrapy
+psycopg2-binary
+dbt-postgres
+curl_cffi
