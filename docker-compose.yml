@@ -1,0 +1,40 @@
+services:
+  
+
+  db2:
+    container_name: postgres_container_2
+    image: postgres:14
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: real_estate_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_warehouse:/var/lib/postgresql/data 
+    networks:
+      - airflow_network
+
+  
+
+  
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - airflow_network
+
+volumes:
+  postgres_data_warehouse: 
+  
+  pgadmin_data_warehouse: 
+
+networks:
+  airflow_network:
+    external: True  
