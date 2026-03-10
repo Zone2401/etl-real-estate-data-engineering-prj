@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: dim_address
+    description: "Contains standardized geographical information for real estate listings."
+    columns:
+      - name: address_id
+        description: "Primary key (Surrogate Key) generated from district and city."
+        tests:
+          - unique
+          - not_null
+      - name: district
+        description: "The name of the district where the property is located."
+        tests:
+          - not_null # Đảm bảo không có địa chỉ trống
+      - name: city
+        description: "The name of the province or city where the property is located."
+        tests:
+          - not_null
+
+  - name: dim_post
+    description: "Contains descriptive and identification information for each property posting."
+    columns:
+      - name: post_id
+        description: "Unique identifier for each individual post."
+        tests:
+          - unique
+          - not_null
+      - name: url
+        description: "The direct web link to the original listing page."
+        tests:
+          - not_null
+
+  - name: dim_seller
+    description: "Contains details about the individuals or agencies posting the listings."
+    columns:
+      - name: seller_id
+        description: "Unique identifier for each seller."
+        tests:
+          - unique
+          - not_null
+
+  - name: fact_real_estate
+    description: "Fact table containing detailed real estate listings."
+    columns:
+      
+      - name: post_id
+        description: "Foreign key referencing the post dimension table."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_post')
+              field: post_id
+
+      - name: address_id
+        description: "Foreign key referencing the address dimension table."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_address')
+              field: address_id
+
+      - name: seller_id
+        description: "Foreign key referencing the seller dimension table."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_seller')
+              field: seller_id
+
+      
+              
